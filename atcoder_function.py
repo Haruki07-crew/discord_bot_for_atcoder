@@ -12,6 +12,16 @@ def get_latest_rating(atcoder_name):
   latest_rating = latest_contenst["NewRating"]
   return f"{atcoder_name}の現在のレートは{latest_rating}です"
 
+#出力用にfstringしないバージョン
+def get_latest_rating_nofstring(atcoder_name):
+  url = f"https://atcoder.jp/users/{atcoder_name}/history/json"
+  response = requests.get(url)
+  data = response.json()
+  if len(data) == 0:
+    return f"{atcoder_name}は存在しません"
+  latest_contenst = data[-1]
+  latest_rating = latest_contenst["NewRating"]
+  return latest_rating
 #これまでのAC数を取得
 def get_ac_count(atcoder_name):
   url_ac_sum = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/ac_rank?user={atcoder_name}"
@@ -48,10 +58,42 @@ def AC_print(atcoder_name):
   return result
 
 #登録されたユーザー間で今日のACの比較
-def AC_fight(user_name_dist):
+def AC_fight(user_name_dict):
   result = []
-  for atcoder_name in user_name_dist:
+  for atcoder_name in user_name_dict:
     ac_count = count_today_ac(atcoder_name)
-    result.append({"discord_name": user_name_dist[atcoder_name], "ac": ac_count})
-    sorted_result = sorted(result, key = lambda x: x["ac"], reverse=True)
-    return sorted_result
+    result.append({"discord_name": user_name_dict[atcoder_name], "ac": ac_count})
+  sorted_result = sorted(result, key = lambda x: (x["ac"][0], x["ac"][1]), reverse=True)
+  return sorted_result
+
+
+#AC数からランキング作成
+def make_ranking(user_name_dict):
+  result = AC_fight(user_name_dict)
+  if not result:
+    return []
+  ranking = []
+  cur_place = 0
+  prev_ac = -1
+  for i, d in enumerate(result):
+    ac_num = d["ac"][0]
+    ac_point = d["ac"][1]
+    if ac_num != prev_ac:
+      cur_place = i + 1
+    if cur_place == 1:
+      figure = " 🥇 "
+    elif cur_place == 2:
+      figure = " 🥈 "
+    elif cur_place == 3:
+      figure = " 🥉 "
+    else:
+      figure = " 👤 "
+    ranking.append({
+      "place" : cur_place,
+      "figure" : figure,
+      "discord_name" : d["discord_name"],
+      "ac" : ac_num,
+      "point" : ac_point
+    })
+    prev_ac = ac_num
+  return ranking
