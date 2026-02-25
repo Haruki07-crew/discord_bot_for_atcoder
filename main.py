@@ -37,8 +37,12 @@ async def AC_counter(interaction: discord.Interaction, atcoder_name: str):
 #ユーザーの登録
 @tree.command(name = "user_resister", description="ユーザーを登録します")
 async def user_resister(interaction: discord.Interaction, atcoder_name: str, discord_name: str):
-  user_name_dict[atcoder_name] = discord_name
-  await interaction.response.send_message(f"{discord_name}さんを{atcoder_name}で登録しました")
+  check = atcoder_function.get_latest_rating_nofstring(atcoder_name)
+  if "存在しません" in str(check):
+    await interaction.response.send_message(f"エラー : {atcoder_name}は存在しません")
+  else:
+    user_name_dict[atcoder_name] = discord_name
+    await interaction.response.send_message(f"{discord_name}さんを{atcoder_name}で登録しました")
 
 
 #ユーザー登録の解除
@@ -66,14 +70,25 @@ async def user_list(interaction: discord.Interaction):
 
 #ユーザー同士でAC数を比較
 @tree.command(name = "ac_fight", description="ユーザー同士でACを比較することができます")
-async def ac_fight(interaction: discord.Interaction):
+@app_commands.choices(period=[
+  app_commands.Choice(name = "1日", value = 1),
+  app_commands.Choice(name = "1週間", value = 7),
+  app_commands.Choice(name = "1ヶ月", value = 30),
+  app_commands.Choice(name = "3ヶ月", value = 90),
+  app_commands.Choice(name = "半年", value = 180),
+  app_commands.Choice(name = "1年", value = 365)
+])
+async def ac_fight(interaction: discord.Interaction, period: app_commands.Choice[int]):
   await interaction.response.defer()
-  ranking_data = atcoder_function.make_ranking(user_name_dict)
+  day = period.value
+  label = period.name
+  ranking_data = atcoder_function.make_ranking(user_name_dict,day)
+
   if not ranking_data:
     await interaction.edit_original_response(content = "登録されているユーザーがいません")
     return 
   embed = discord.Embed(
-    title = "🏆 AC fight ランキング 🏆",
+    title = f"🏆 AC fight ランキング [{label}]🏆",
     color = 0xFFD700, 
     timestamp = interaction.created_at
   )
@@ -83,7 +98,7 @@ async def ac_fight(interaction: discord.Interaction):
       value = f"今日のAC数 : **{data["ac"]}** AC  点数 : **{data["point"]}** 点",
       inline = False
     )
-  await interaction.edit_original_response(embed=embed) 
+  await interaction.edit_original_response(content = None, embed=embed) 
 
 
 

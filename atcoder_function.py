@@ -1,5 +1,6 @@
 import requests
 from datetime import datetime, timezone, timedelta
+import time
 
 #現在のレートを取得
 def get_latest_rating(atcoder_name):
@@ -31,11 +32,14 @@ def get_ac_count(atcoder_name):
   return ac_sum
 
 #今日のAC数を取得
-def count_today_ac(atcoder_name):
+def count_period_ac(atcoder_name, day):
   time_difference = timezone(timedelta(hours=9))
   now = datetime.now(time_difference)
-  today_start = datetime(now.year, now.month, now.day, tzinfo=time_difference)
-  unix_time = (int)(today_start.timestamp())
+  if day == 1:
+    start_time = datetime(now.year, now.month, now.day, tzinfo=time_difference)
+  else:
+    start_time = datetime(now.year, now.month, now.day, tzinfo=time_difference) - timedelta(days=day)
+  unix_time = int(start_time.timestamp())
   url= f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={atcoder_name}&from_second={unix_time}"
   response = requests.get(url)
   data = response.json()
@@ -50,26 +54,27 @@ def count_today_ac(atcoder_name):
 #これまで・今日のAC数をまとめて返す
 def AC_print(atcoder_name):
   ac_sum = get_ac_count(atcoder_name)
-  daily_ac_sum, daily_ac_point_sum = count_today_ac(atcoder_name)
+  daily_ac_sum, daily_ac_point_sum = count_period_ac(atcoder_name,1)
   if daily_ac_sum == 0:
     result = f"{atcoder_name}さんの今までのAC数は{ac_sum}\n今日のAC数は{daily_ac_sum}です。精進せんかい"
   else:
     result = f"{atcoder_name}さんの今までのAC数は{ac_sum}\n今日のAC数は{daily_ac_sum}で{daily_ac_point_sum}点取得しました"
   return result
 
-#登録されたユーザー間で今日のACの比較
-def AC_fight(user_name_dict):
+#登録されたユーザー間で期間を指定してのAC数の比較
+def AC_fight(user_name_dict, day):
   result = []
-  for atcoder_name in user_name_dict:
-    ac_count = count_today_ac(atcoder_name)
-    result.append({"discord_name": user_name_dict[atcoder_name], "ac": ac_count})
+  for atcoder_name, discord_name in user_name_dict.items():
+    time.sleep(1)
+    ac_count = count_period_ac(atcoder_name, day)
+    result.append({"discord_name":discord_name, "ac": ac_count})
   sorted_result = sorted(result, key = lambda x: (x["ac"][0], x["ac"][1]), reverse=True)
   return sorted_result
 
 
 #AC数からランキング作成
-def make_ranking(user_name_dict):
-  result = AC_fight(user_name_dict)
+def make_ranking(user_name_dict, day):
+  result = AC_fight(user_name_dict, day)
   if not result:
     return []
   ranking = []
