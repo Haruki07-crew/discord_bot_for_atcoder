@@ -49,7 +49,7 @@ def count_period_ac(atcoder_name, day):
     if submission["result"] == "AC":
       s.add(submission["id"])
       ac_point_sum += submission["point"]
-  return [len(s), ac_point_sum]
+  return [len(s), int(ac_point_sum)]
 
 #これまで・今日のAC数をまとめて返す
 def AC_print(atcoder_name):
