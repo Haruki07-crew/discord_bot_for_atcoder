@@ -1,4 +1,4 @@
-__database.db
+database.db
 .env
 __pycache__/
 **/*.py[cod]
