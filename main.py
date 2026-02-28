@@ -8,14 +8,32 @@ intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
-# def init_db():
+def init_db():
+  conn = sqlite3.connect("database.db")
+  cursor = conn.cursor()
+  cursor.execute("CREATE TABLE IF NOT EXISTS users (atcoder_name TEXT PRIMARY KEY, discord_name TEXT)")
+  conn.commit()
+  conn.close()
+def get_user_dict():
+  conn = sqlite3.connect("database.db")
+  cursor = conn.cursor()
+  cursor.execute("SELECT atcoder_name, discord_name FROM users")
+  row = cursor.fetchall()
+  conn.close()
+  user_dict = {}
+  for data in row:
+    atcoder_name = data[0]
+    discord_name = data[1]
+    user_dict[atcoder_name] = discord_name
+  return user_dict
 
 
-user_name_dict = {}
+
 
 
 @client.event
 async def on_ready():
+  init_db()
   await tree.sync()
   print("bot起動!")
 
@@ -23,6 +41,7 @@ async def on_ready():
 #現在のレートの取得
 @tree.command(name = "rating", description="Atcoderのレートを取得します")
 async def rating_command(interaction: discord.Interaction, atcoder_name: str):
+  await interaction.response.defer()
   ac_sum = atcoder_function.get_ac_count(atcoder_name)
   ac_daily = atcoder_function.count_period_ac(atcoder_name, 1)
   embed = discord.Embed(
@@ -47,59 +66,67 @@ async def rating_command(interaction: discord.Interaction, atcoder_name: str):
     inline = True
   )
   if ac_daily[0] == 0:
-    embed.set_footer(text = "精進せんかい雑魚bro")
+    embed.set_footer(text = "精進せんかい雑魚bro\n")
   else :
-    embed.set_footer(text = "偉すぎるぜbro")
-  await interaction.response.send_message(content = None, embed = embed)
+    embed.set_footer(text = "偉すぎるぜbro\n")
+  await interaction.edit_original_response(content = None, embed = embed)
 
 
-#これまでのAC数および今日のAC数
-@tree.command(name = "ac_count", description="AC数を取得します")
-async def AC_counter(interaction: discord.Interaction, atcoder_name: str):
-  result = atcoder_function.AC_print(atcoder_name)
-  await interaction.response.send_message(result)
+
 
 
 #ユーザーの登録
 @tree.command(name = "user_resister", description="ユーザーを登録します")
 async def user_resister(interaction: discord.Interaction, atcoder_name: str, discord_name: str):
+  await interaction.response.defer()
   check = atcoder_function.get_latest_rating_nofstring(atcoder_name)
   if "存在しません" in str(check):
-    await interaction.response.send_message(f"エラー : {atcoder_name}は存在しません")
+    await interaction.edit_original_response(content = f"エラー : {atcoder_name}は存在しません")
   else:
-    user_name_dict[atcoder_name] = discord_name
-    await interaction.response.send_message(f"{discord_name}さんを{atcoder_name}で登録しました")
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("REPLACE INTO users (atcoder_name, discord_name) VALUES (?, ?)", (atcoder_name, discord_name))
+    conn.commit()
+    conn.close()
+    await interaction.edit_original_response(content = f"{discord_name}さんを{atcoder_name}でDBに登録しました")
+
 
 
 #ユーザー登録の解除
 @tree.command(name = "user_unresister", description="登録されているユーザーの登録を解除します")
 async def user_unresister(interaction: discord.Interaction, atcoder_name: str):
-  if atcoder_name in user_name_dict:
-    discor_name = user_name_dict[atcoder_name]
-    del user_name_dict[atcoder_name]
-    await interaction.response.send_message(f"{discor_name}さんの登録を解除しました")
+  conn = sqlite3.connect("database.db")
+  cursor = conn.cursor()
+  cursor.execute("DELETE FROM users WHERE atcoder_name = ?", (atcoder_name,))
+  if cursor.rowcount > 0:
+    await interaction.response.send_message(f"{atcoder_name}さんの登録を解除しました")
+  else:
+    await interaction.response.send_message(f"{atcoder_name}さんは登録されていません")
+  conn.commit()
+  conn.close()
 
 
 #登録されているユーザの一覧を表示
 @tree.command(name = "user_list", description="登録済みユーザーおよびレートを表示します")
 async def user_list(interaction: discord.Interaction):
-  if not user_name_dict:
+  user = get_user_dict()
+  if not user:
     await interaction.response.send_message("登録されているユーザーがいません")
     return
+  await interaction.response.defer()
   embed = discord.Embed(
     title = "登録ユーザー",
     color = 0x3498db,
     timestamp = interaction.created_at
   )
-  response_tmp_dict = []
-  for atcoder_name, discor_name in user_name_dict.items():
+  for atcoder_name, discor_name in user.items():
     latest_rating = atcoder_function.get_latest_rating_nofstring(atcoder_name)
     embed.add_field(
       name = f"👤 {discor_name}",
       value = f"Atcoder_ID: {atcoder_name}\n Rating: **{latest_rating}**",
       inline = False
     )
-  await interaction.response.send_message(content = None, embed = embed)
+  await interaction.edit_original_response(content = None, embed = embed)
 
 
 #ユーザー同士でAC数を比較
@@ -114,9 +141,10 @@ async def user_list(interaction: discord.Interaction):
 ])
 async def ac_fight(interaction: discord.Interaction, period: app_commands.Choice[int]):
   await interaction.response.defer()
+  user = get_user_dict()
   day = period.value
   label = period.name
-  ranking_data = atcoder_function.make_ranking(user_name_dict,day)
+  ranking_data = atcoder_function.make_ranking(user,day)
 
   if not ranking_data:
     await interaction.edit_original_response(content = "登録されているユーザーがいません")
