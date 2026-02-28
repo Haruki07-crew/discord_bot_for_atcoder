@@ -23,8 +23,34 @@ async def on_ready():
 #現在のレートの取得
 @tree.command(name = "rating", description="Atcoderのレートを取得します")
 async def rating_command(interaction: discord.Interaction, atcoder_name: str):
-  result = atcoder_function.get_latest_rating(atcoder_name)
-  await interaction.response.send_message(result)
+  ac_sum = atcoder_function.get_ac_count(atcoder_name)
+  ac_daily = atcoder_function.count_period_ac(atcoder_name, 1)
+  embed = discord.Embed(
+    title = f"{atcoder_name}さんの精進記録",
+    color = 0x2ecc71,
+    url = f"https://atcoder.jp/users/{atcoder_name}",
+    timestamp = interaction.created_at
+  )
+  embed.add_field(
+    name = "これまでのAC数",
+    value = f"**{ac_sum}** AC",
+    inline = True
+  )
+  embed.add_field(
+    name = "今日のAC数",
+    value = f"**{ac_daily[0]}** AC",
+    inline = True
+  )
+  embed.add_field(
+    name = "今日の獲得点数",
+    value = f"**{int(ac_daily[1])}** 点",
+    inline = True
+  )
+  if ac_daily[0] == 0:
+    embed.set_footer(text = "精進せんかい雑魚bro")
+  else :
+    embed.set_footer(text = "偉すぎるぜbro")
+  await interaction.response.send_message(content = None, embed = embed)
 
 
 #これまでのAC数および今日のAC数
@@ -57,15 +83,23 @@ async def user_unresister(interaction: discord.Interaction, atcoder_name: str):
 #登録されているユーザの一覧を表示
 @tree.command(name = "user_list", description="登録済みユーザーおよびレートを表示します")
 async def user_list(interaction: discord.Interaction):
-  if user_name_dict:
-    response_tmp_dict = []
-    for atcoder_name, discor_name in user_name_dict.items():
-      latest_rating = atcoder_function.get_latest_rating_nofstring(atcoder_name)
-      response_tmp_dict.append(f"👤{discor_name} → {atcoder_name} : {latest_rating}")
-    response_message = "\n".join(response_tmp_dict)
-    await interaction.response.send_message(response_message)
-  else:
+  if not user_name_dict:
     await interaction.response.send_message("登録されているユーザーがいません")
+    return
+  embed = discord.Embed(
+    title = "登録ユーザー",
+    color = 0x3498db,
+    timestamp = interaction.created_at
+  )
+  response_tmp_dict = []
+  for atcoder_name, discor_name in user_name_dict.items():
+    latest_rating = atcoder_function.get_latest_rating_nofstring(atcoder_name)
+    embed.add_field(
+      name = f"👤 {discor_name}",
+      value = f"Atcoder_ID: {atcoder_name}\n Rating: **{latest_rating}**",
+      inline = False
+    )
+  await interaction.response.send_message(content = None, embed = embed)
 
 
 #ユーザー同士でAC数を比較
