@@ -39,15 +39,16 @@ async def on_ready():
 
 
 #現在のレートの取得
-@tree.command(name = "rating", description="Atcoderのレートを取得します")
+@tree.command(name = "syozin", description="Atcoderの精進記録を返します")
 async def rating_command(interaction: discord.Interaction, atcoder_name: str):
   await interaction.response.defer()
   ac_sum = atcoder_function.get_ac_count(atcoder_name)
   ac_daily = atcoder_function.count_period_ac(atcoder_name, 1)
+  problems_url = f"https://kenkoooo.com/atcoder/#/user/{atcoder_name}?userPageTab=Progress+Charts",
   embed = discord.Embed(
     title = f"{atcoder_name}さんの精進記録",
     color = 0x2ecc71,
-    url = f"https://atcoder.jp/users/{atcoder_name}",
+    url = f"https://kenkoooo.com/atcoder/#/user/{atcoder_name}?userPageTab=Progress+Charts",
     timestamp = interaction.created_at
   )
   embed.add_field(
@@ -121,9 +122,10 @@ async def user_list(interaction: discord.Interaction):
   )
   for atcoder_name, discor_name in user.items():
     latest_rating = atcoder_function.get_latest_rating_nofstring(atcoder_name)
+    atcoder_url = f"https://atcoder.jp/users/{atcoder_name}"
     embed.add_field(
       name = f"👤 {discor_name}",
-      value = f"Atcoder_ID: {atcoder_name}\n Rating: **{latest_rating}**",
+      value = f"Atcoder_ID: [{atcoder_name}]({atcoder_url})\n Rating: **{latest_rating}**",
       inline = False
     )
   await interaction.edit_original_response(content = None, embed = embed)
