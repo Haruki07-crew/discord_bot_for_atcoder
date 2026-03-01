@@ -62,3 +62,13 @@ async def make_ranking(user_dict, day):
     result.append({"discord_name": discord_name, "data": data})
     await asyncio.sleep(1)
   return sorted(result, key=lambda x: (x["data"]["ac_point"], x["data"]["ac_count"]), reverse=True)
+
+async def get_latest_rating(atcoder_name):
+  url = f"https://atcoder.jp/users/{atcoder_name}/history/json"
+  response = requests.get(url)
+  data = response.json()
+  if len(data) == 0:
+    return f"{atcoder_name}は存在しません"
+  latest_contenst = data[-1]
+  latest_rating = latest_contenst["NewRating"]
+  return latest_rating

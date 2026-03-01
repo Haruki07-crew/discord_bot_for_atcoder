@@ -21,7 +21,7 @@ def get_user_dict():
 def user_resister(atcoder_name, discord_name):
   with sqlite3.connect(DB_FILE) as conn:
     cursor = conn.cursor()
-    cursor.excute("REPLACE INTO users (atcoder_name, discord_name) VALUES (?, ?)", (atcoder_name, discord_name))
+    cursor.execute("REPLACE INTO users (atcoder_name, discord_name) VALUES (?, ?)", (atcoder_name, discord_name))
     conn.commit()
 
 def user_unresister(atcoder_name):
