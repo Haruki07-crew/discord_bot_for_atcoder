@@ -87,19 +87,24 @@ async def rating_command(interaction: discord.Interaction, atcoder_name: str):
 @tree.command(name = "user_resister", description="ユーザーを登録します")
 async def user_resister(interaction: discord.Interaction, atcoder_name: str):
   discord_name = interaction.user.display_name
+  with sqlite3.connect(DB_FILE) as conn:
+    cursor = conn.cursor()
+    cursor.execute("SELECT discord_name FROM users WHERE atcoder_name = ?", (atcoder_name,))
+    exist_user = cursor.fetchone()
+  if exist_user:
+    await interaction.response.send_message(f"エラー: {atcoder_name} さんはすでに{exist_user[0]}さんによって登録されています")
+    return
+
   check = await atcoder_function.get_latest_rating_nofstring(atcoder_name)
   if "存在しません" in str(check):
     await interaction.response.send_message(f"エラー : {atcoder_name}は存在しません")
-  else:
-    with sqlite3.connect(DB_FILE) as conn:
-      cursor = conn.cursor()
-      cursor.execute("REPLACE INTO users (atcoder_name, discord_name) VALUES (?, ?)", (atcoder_name, discord_name))
-      exist_user = cursor.fetchone()
-      conn.commit()
-    if exist_user:
-      await interaction.response.send_message(f"エラー: {atcoder_name} さんはすでに{exist_user[0]}さんによって登録されています")
-    await interaction.response.send_message(f"{discord_name}さんを{atcoder_name}でDBに登録しました")
-
+  
+  with sqlite3.connect(DB_FILE) as conn:
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO users (atcoder_name, discord_name) VALUES (?, ?)", (atcoder_name, discord_name))
+    conn.commit()
+  await interaction.response.send_message(f"{discord_name} さんを {atcoder_name} でDBに登録しました")
+    
 
 
 #ユーザー登録の解除
