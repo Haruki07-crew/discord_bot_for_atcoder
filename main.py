@@ -5,7 +5,6 @@ import atcoder_function
 import sqlite3
 import asyncio
 from server import server_thread
-import os
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
@@ -95,7 +94,10 @@ async def user_resister(interaction: discord.Interaction, atcoder_name: str):
     with sqlite3.connect(DB_FILE) as conn:
       cursor = conn.cursor()
       cursor.execute("REPLACE INTO users (atcoder_name, discord_name) VALUES (?, ?)", (atcoder_name, discord_name))
+      exist_user = cursor.fetchone()
       conn.commit()
+    if exist_user:
+      await interaction.response.send_message(f"エラー: {atcoder_name} さんはすでに{exist_user[0]}さんによって登録されています")
     await interaction.response.send_message(f"{discord_name}さんを{atcoder_name}でDBに登録しました")
 
 
