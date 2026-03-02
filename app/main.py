@@ -38,7 +38,7 @@ def get_user_dict():
 async def on_ready():
   init_db()
   await tree.sync()
-  print("bot起動!")
+  print("activate the bot  now!!!!")
 
 
 #現在のレートの取得
