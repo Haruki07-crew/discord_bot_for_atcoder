@@ -172,7 +172,7 @@ async def ac_fight(interaction: discord.Interaction, period: app_commands.Choice
     for data in ranking_data:
       embed.add_field(
         name = f"{data['figure']}{data['place']}位 : {data['discord_name']}",
-        value = f"AC数 : **{data["ac"]}** AC  点数 : **{data["point"]}** 点",
+        value = f"AC数 : **{data['ac']}** AC  点数 : **{data['point']}** 点",
         inline = False
       )
     await interaction.edit_original_response(content=None, embed=embed) 
