@@ -1,7 +1,7 @@
 import requests
 from datetime import datetime, timezone, timedelta
-import time
 import asyncio
+import math
 
 #現在のレートを取得
 async def get_latest_rating(atcoder_name):
@@ -62,7 +62,7 @@ async def count_period_ac(atcoder_name, day):
     if len(data) < 500:
       break
     await asyncio.sleep(0.8)
-  return [len(s), int(round(ac_point_sum))]
+  return [len(s), math.ceil(ac_point_sum)]
 
 #これまで・今日のAC数をまとめて返す
 async def AC_print(atcoder_name):
@@ -116,3 +116,22 @@ async def make_ranking(user_name_dict, day):
     prev_ac = ac_num
     prev_point = ac_point
   return ranking
+
+def get_rate_heart(rating):
+  if not isinstance(rating, int):
+    return "🤍"
+  if rating < 400:
+    return "🩶d"
+  if rating < 800:
+    return "🤎"
+  if rating < 1200:
+    return "💚"
+  if rating < 1600:
+    return "🩵"
+  if rating < 2000:
+    return "💙"
+  if rating < 2500:
+    return "💛"
+  if rating < 2800:
+    return "🧡"
+  return "❤️"

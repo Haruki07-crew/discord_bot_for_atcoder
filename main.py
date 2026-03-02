@@ -3,25 +3,24 @@ from discord import app_commands
 import config
 import atcoder_function
 import sqlite3
+import asyncio
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 admin_id = "859014513448976425"
-
+DB_FILE = "database.db"
 def init_db():
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-  cursor.execute("CREATE TABLE IF NOT EXISTS users (atcoder_name TEXT PRIMARY KEY, discord_name TEXT)")
-  conn.commit()
-  conn.close()
+  with sqlite3.connect(DB_FILE) as conn:
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (atcoder_name TEXT PRIMARY KEY, discord_name TEXT)")
+    conn.commit()
 def get_user_dict():
-  conn = sqlite3.connect("database.db")
-  cursor = conn.cursor()
-  cursor.execute("SELECT atcoder_name, discord_name FROM users")
-  row = cursor.fetchall()
-  conn.close()
+  with sqlite3.connect(DB_FILE) as conn:
+    cursor = conn.cursor()
+    cursor.execute("SELECT atcoder_name, discord_name FROM users")
+    row = cursor.fetchall()
   user_dict = {}
   for data in row:
     atcoder_name = data[0]
@@ -73,10 +72,10 @@ async def rating_command(interaction: discord.Interaction, atcoder_name: str):
       embed.set_footer(text = "精進せんかい雑魚bro\n")
     else :
       embed.set_footer(text = "偉すぎるぜbro\n")
-    await interaction.edit_original_response(content = None, embed = embed)
+    await interaction.edit_original_response(embed = embed)
   except Exception as e:
     print(e)
-    await interaction.edit_original_response(content = f"⚠️ エラーが発生しました。お手数ですが(<@{admin_id}>)までご連絡ください。")
+    await interaction.edit_original_response(content=f"⚠️ エラーが発生しました。お手数ですが(<@{admin_id}>)までご連絡ください。")
 
 
 
@@ -84,18 +83,17 @@ async def rating_command(interaction: discord.Interaction, atcoder_name: str):
 
 #ユーザーの登録
 @tree.command(name = "user_resister", description="ユーザーを登録します")
-async def user_resister(interaction: discord.Interaction, atcoder_name: str, discord_name: str):
-  await interaction.response.defer()
+async def user_resister(interaction: discord.Interaction, atcoder_name: str):
+  discord_name = interaction.user
   check = await atcoder_function.get_latest_rating_nofstring(atcoder_name)
   if "存在しません" in str(check):
-    await interaction.edit_original_response(content = f"エラー : {atcoder_name}は存在しません")
+    await interaction.response.send_message(f"エラー : {atcoder_name}は存在しません")
   else:
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-    cursor.execute("REPLACE INTO users (atcoder_name, discord_name) VALUES (?, ?)", (atcoder_name, discord_name))
-    conn.commit()
-    conn.close()
-    await interaction.edit_original_response(content = f"{discord_name}さんを{atcoder_name}でDBに登録しました")
+    with sqlite3.connect(DB_FILE) as conn:
+      cursor = conn.cursor()
+      cursor.execute("REPLACE INTO users (atcoder_name, discord_name) VALUES (?, ?)", (atcoder_name, discord_name))
+      conn.commit()
+    await interaction.response.send_message(f"{discord_name}さんを{atcoder_name}でDBに登録しました")
 
 
 
@@ -130,11 +128,12 @@ async def user_list(interaction: discord.Interaction):
     latest_rating = await atcoder_function.get_latest_rating_nofstring(atcoder_name)
     atcoder_url = f"https://atcoder.jp/users/{atcoder_name}"
     embed.add_field(
-      name = f"👤 {discor_name}",
+      name = f"{atcoder_function.get_rate_heart(latest_rating)} {discor_name}",
       value = f"Atcoder_ID: [{atcoder_name}]({atcoder_url})\n Rating: **{latest_rating}**",
       inline = False
     )
-  await interaction.edit_original_response(content = None, embed = embed)
+    await asyncio.sleep(0.5)
+  await interaction.edit_original_response(embed = embed)
 
 
 #ユーザー同士でAC数を比較
@@ -144,8 +143,6 @@ async def user_list(interaction: discord.Interaction):
   app_commands.Choice(name = "1週間", value = 7),
   app_commands.Choice(name = "1ヶ月", value = 30),
   app_commands.Choice(name = "3ヶ月", value = 90),
-  app_commands.Choice(name = "半年", value = 180),
-  app_commands.Choice(name = "1年", value = 365)
 ])
 async def ac_fight(interaction: discord.Interaction, period: app_commands.Choice[int]):
   await interaction.response.defer()
@@ -156,7 +153,7 @@ async def ac_fight(interaction: discord.Interaction, period: app_commands.Choice
     ranking_data = await atcoder_function.make_ranking(user,day)
 
     if not ranking_data:
-      await interaction.edit_original_response(content = "登録されているユーザーがいません")
+      await interaction.edit_original_response(content="登録されているユーザーがいません")
       return 
     embed = discord.Embed(
       title = f"🏆 AC fight ランキング [{label}]🏆",
@@ -169,10 +166,10 @@ async def ac_fight(interaction: discord.Interaction, period: app_commands.Choice
         value = f"AC数 : **{data["ac"]}** AC  点数 : **{data["point"]}** 点",
         inline = False
       )
-    await interaction.edit_original_response(content = None, embed=embed) 
+    await interaction.edit_original_response(content=None, embed=embed) 
   except Exception as e:
     print(e)
-    await interaction.edit_original_response(content = f"⚠️ エラーが発生しました。お手数ですが(<@{admin_id}>)までご連絡ください。")
+    await interaction.edit_original_response(content=f"⚠️ エラーが発生しました。お手数ですが(<@{admin_id}>)までご連絡ください。")
 
 
 
