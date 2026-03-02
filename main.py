@@ -5,14 +5,15 @@ import atcoder_function
 import sqlite3
 import asyncio
 from server import server_thread
-
+import os
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
-admin_id = "859014513448976425"
+admin_id = config.ADMIN_ID
 DB_FILE = "database.db"
+
 def init_db():
   with sqlite3.connect(DB_FILE) as conn:
     cursor = conn.cursor()
