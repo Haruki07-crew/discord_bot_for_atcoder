@@ -3,7 +3,4 @@ database.db
 __pycache__/
 **/*.py[cod]
 .vscode/
-admin_select.py
-requirements.txt
-server.py
-Dockerfile
+admin_secret.py
