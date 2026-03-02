@@ -5,6 +5,7 @@ import atcoder_function
 import sqlite3
 import asyncio
 from server import server_thread
+import threading
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
@@ -182,8 +183,13 @@ async def ac_fight(interaction: discord.Interaction, period: app_commands.Choice
 
 
 
-server_thread()
-client.run(config.DISCORD_TOKEN)
 
+client.run(config.DISCORD_TOKEN)
+def run_discord_bot():
+  loop = asyncio.new_event_loop()
+  asyncio.set_event_loop(loop)
+  loop.run_until_complete(client.start(config.DISCORD_TOKEN))
+threading.Thread(target=run_discord_bot, daemon=True).start()
+server_thread()
 
 
