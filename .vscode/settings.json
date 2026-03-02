@@ -1,0 +1,8 @@
+{
+  "python-envs.defaultEnvManager": "ms-python.python:conda",
+  "python-envs.defaultPackageManager": "ms-python.python:conda",
+  "python.defaultInterpreterPath": "/Users/higashiharaharuki/miniconda3/bin/python",
+  "python.analysis.extraPaths": [
+    "/Users/higashiharaharuki/miniconda3/lib/python3.13/site-packages"
+  ]
+}
