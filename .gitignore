@@ -2,3 +2,5 @@ database.db
 .env
 __pycache__/
 **/*.py[cod]
+.vscode/
+admin_select.py

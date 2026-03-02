@@ -4,6 +4,8 @@ import config
 import atcoder_function
 import sqlite3
 import asyncio
+from server import server_thread
+
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
@@ -84,7 +86,7 @@ async def rating_command(interaction: discord.Interaction, atcoder_name: str):
 #ユーザーの登録
 @tree.command(name = "user_resister", description="ユーザーを登録します")
 async def user_resister(interaction: discord.Interaction, atcoder_name: str):
-  discord_name = interaction.user
+  discord_name = interaction.user.display_name
   check = await atcoder_function.get_latest_rating_nofstring(atcoder_name)
   if "存在しません" in str(check):
     await interaction.response.send_message(f"エラー : {atcoder_name}は存在しません")
@@ -142,7 +144,6 @@ async def user_list(interaction: discord.Interaction):
   app_commands.Choice(name = "1日", value = 1),
   app_commands.Choice(name = "1週間", value = 7),
   app_commands.Choice(name = "1ヶ月", value = 30),
-  app_commands.Choice(name = "3ヶ月", value = 90),
 ])
 async def ac_fight(interaction: discord.Interaction, period: app_commands.Choice[int]):
   await interaction.response.defer()
