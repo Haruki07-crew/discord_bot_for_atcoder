@@ -174,7 +174,7 @@ async def ac_fight(interaction: discord.Interaction, period: app_commands.Choice
 
 
 
-
+server_thread()
 client.run(config.DISCORD_TOKEN)
 
 
